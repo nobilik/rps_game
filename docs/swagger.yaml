@@ -1,0 +1,456 @@
+basePath: /api/v1
+definitions:
+  auth.LoginData:
+    properties:
+      login:
+        type: string
+      password:
+        type: string
+    type: object
+  auth.LoginResponse:
+    properties:
+      token:
+        type: string
+    type: object
+  core.BetResponseRequest:
+    properties:
+      acceptor_id:
+        type: integer
+      item:
+        type: string
+    type: object
+  core.NewBetRequest:
+    properties:
+      acceptor_id:
+        type: integer
+      amount:
+        type: number
+      item:
+        type: string
+    type: object
+  core.TransactionRequest:
+    properties:
+      amount:
+        type: number
+    type: object
+  gorm.DeletedAt:
+    properties:
+      time:
+        type: string
+      valid:
+        description: Valid is true if Time is not NULL
+        type: boolean
+    type: object
+  models.Bet:
+    description: Bet represents a betting record
+    properties:
+      acceptor_id:
+        description: it's another user id
+        type: integer
+      acceptor_item_value:
+        type: integer
+      amount:
+        type: number
+      createdAt:
+        type: string
+      deletedAt:
+        $ref: '#/definitions/gorm.DeletedAt'
+      id:
+        type: integer
+      item_value:
+        type: integer
+      result:
+        allOf:
+        - $ref: '#/definitions/models.ResultType'
+        description: it's nil on status Pending
+      status:
+        $ref: '#/definitions/models.BetStatus'
+      updatedAt:
+        type: string
+      user_id:
+        type: integer
+    type: object
+  models.BetStatus:
+    enum:
+    - 0
+    - 1
+    - 2
+    type: integer
+    x-enum-comments:
+      Accepted: = played
+      Declined: can be declined by acceptor
+    x-enum-varnames:
+    - Pending
+    - Declined
+    - Accepted
+  models.ResultType:
+    enum:
+    - 0
+    - 1
+    - 2
+    type: integer
+    x-enum-varnames:
+    - Loss
+    - Equal
+    - Winning
+  models.Transaction:
+    properties:
+      amount:
+        type: number
+      bet_id:
+        description: for win & loss
+        type: integer
+      createdAt:
+        type: string
+      deletedAt:
+        $ref: '#/definitions/gorm.DeletedAt'
+      id:
+        type: integer
+      type:
+        $ref: '#/definitions/models.TransactionType'
+      updatedAt:
+        type: string
+      user_id:
+        type: integer
+    type: object
+  models.TransactionType:
+    enum:
+    - 0
+    - 1
+    - 2
+    - 3
+    type: integer
+    x-enum-varnames:
+    - TopUp
+    - Withdrawal
+    - Win
+    - Lose
+  models.User:
+    properties:
+      balance:
+        type: number
+      createdAt:
+        type: string
+      deletedAt:
+        $ref: '#/definitions/gorm.DeletedAt'
+      id:
+        type: integer
+      login:
+        description: we'll use email
+        type: string
+      password:
+        description: we store it encrypted
+        type: string
+      updatedAt:
+        type: string
+    type: object
+host: localhost:3000
+info:
+  contact: {}
+  description: simple RPS game
+  title: RPS game API - OpenAPI 2.0
+  version: 1.0.0
+paths:
+  /bets:
+    get:
+      description: gives list of active bets that other users made with current user
+        id as acceptor
+      parameters:
+      - description: token
+        in: header
+        name: X-Auth-Token
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/models.Bet'
+            type: array
+        "401":
+          description: auth required
+          schema:
+            type: string
+        "500":
+          description: Something went wrong with provided data
+          schema:
+            type: string
+      summary: gives list of active bets
+      tags:
+      - bets
+    post:
+      consumes:
+      - application/json
+      description: New bet
+      parameters:
+      - description: token
+        in: header
+        name: X-Auth-Token
+        required: true
+        type: string
+      - description: a new bet data
+        in: body
+        name: betRequest
+        required: true
+        schema:
+          $ref: '#/definitions/core.NewBetRequest'
+      responses:
+        "200":
+          description: bet placed
+          schema:
+            type: string
+        "400":
+          description: Some error
+          schema:
+            type: string
+        "401":
+          description: auth required
+          schema:
+            type: string
+        "500":
+          description: Something went wrong with provided data
+          schema:
+            type: string
+      summary: User place bet with amount, item name and another user ID
+      tags:
+      - bets
+  /bets/{action}:
+    patch:
+      consumes:
+      - application/json
+      description: New bet
+      parameters:
+      - description: token
+        in: header
+        name: X-Auth-Token
+        required: true
+        type: string
+      - description: decline or accept
+        in: path
+        name: action
+        required: true
+        type: string
+      - description: a bet response data
+        in: body
+        name: bet
+        required: true
+        schema:
+          $ref: '#/definitions/core.BetResponseRequest'
+      responses:
+        "200":
+          description: some result
+          schema:
+            type: string
+        "400":
+          description: Some error
+          schema:
+            type: string
+        "401":
+          description: auth required
+          schema:
+            type: string
+        "500":
+          description: Something went wrong with provided data
+          schema:
+            type: string
+      summary: User place bet with amount, item name and another user ID
+      tags:
+      - bets
+  /login:
+    post:
+      consumes:
+      - application/json
+      description: Gives value of X-Auth-Token for authentication
+      parameters:
+      - description: login-pass
+        in: body
+        name: LoginData
+        required: true
+        schema:
+          $ref: '#/definitions/auth.LoginData'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Successful
+          schema:
+            $ref: '#/definitions/auth.LoginResponse'
+        "401":
+          description: bad login
+          schema:
+            type: string
+        "500":
+          description: Something went wrong with provided data
+          schema:
+            type: string
+      summary: Login with login-pass
+      tags:
+      - auth
+  /logout:
+    delete:
+      description: Deletes current auth session
+      parameters:
+      - description: token
+        in: header
+        name: X-Auth-Token
+        required: true
+        type: string
+      responses:
+        "200":
+          description: logged out
+          schema:
+            type: string
+        "400":
+          description: Some err
+          schema:
+            type: string
+      summary: Logout
+      tags:
+      - auth
+  /register:
+    post:
+      consumes:
+      - application/json
+      description: Adds user to db
+      parameters:
+      - description: login-pass
+        in: body
+        name: RegisterData
+        required: true
+        schema:
+          $ref: '#/definitions/auth.LoginData'
+      responses:
+        "201":
+          description: created
+          schema:
+            type: string
+        "400":
+          description: Some error
+          schema:
+            type: string
+        "500":
+          description: Something went wrong with provided data
+          schema:
+            type: string
+      summary: Register with login-pass
+      tags:
+      - auth
+  /stats:
+    get:
+      description: just example
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            type: object
+      summary: gives admin stats for all users
+      tags:
+      - stats
+  /transactions:
+    get:
+      description: gives list of own transactions
+      parameters:
+      - description: token
+        in: header
+        name: X-Auth-Token
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/models.Transaction'
+            type: array
+        "401":
+          description: auth required
+          schema:
+            type: string
+        "500":
+          description: Something went wrong with provided data
+          schema:
+            type: string
+      summary: gives list of own transactions
+      tags:
+      - transactions
+  /transactions/{action}:
+    post:
+      consumes:
+      - application/json
+      description: top up or withdraw
+      parameters:
+      - description: token
+        in: header
+        name: X-Auth-Token
+        required: true
+        type: string
+      - description: action
+        in: path
+        name: action
+        required: true
+        type: string
+      - description: object with amount
+        in: body
+        name: transactionRequest
+        required: true
+        schema:
+          $ref: '#/definitions/core.TransactionRequest'
+      responses:
+        "200":
+          description: some result
+          schema:
+            type: string
+        "400":
+          description: Some error
+          schema:
+            type: string
+        "401":
+          description: auth required
+          schema:
+            type: string
+        "500":
+          description: Something went wrong with provided data
+          schema:
+            type: string
+      summary: Manages own balance
+      tags:
+      - transactions
+  /users:
+    get:
+      description: gives list of users excluding self
+      parameters:
+      - description: token
+        in: header
+        name: X-Auth-Token
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/models.User'
+            type: array
+        "401":
+          description: auth required
+          schema:
+            type: string
+        "500":
+          description: Something went wrong with provided data
+          schema:
+            type: string
+      summary: gives list of all registered users
+      tags:
+      - users
+schemes:
+- http
+swagger: "2.0"

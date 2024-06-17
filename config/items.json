@@ -1,0 +1,14 @@
+[
+    {
+        "name": "rock",
+        "value": 0
+    },
+    {
+        "name": "papper",
+        "value": 1
+    },
+    {
+        "name": "scissor",
+        "value": 2
+    }
+]
