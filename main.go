@@ -53,5 +53,7 @@ func server() {
 
 	e.GET("/docs/*", swg.WrapHandler)
 
+	// go core.PlaceBetByAI()
+
 	e.Logger.Fatal(e.Start(":3000"))
 }

@@ -38,6 +38,9 @@ func (first *Item) Beats(second *Item) ResultType {
 	if first.Value == 0 && second.Value == sessionMaxValue {
 		return Winning
 	}
+	if first.Value == sessionMaxValue && second.Value == 0 {
+		return Loss
+	}
 	if first.Value > second.Value {
 		return Winning
 	}
@@ -53,7 +56,7 @@ func init() {
 
 // loads items from json file
 func load() {
-	cfgFile, err := os.ReadFile("config/items.json")
+	cfgFile, err := os.ReadFile("../config/items.json")
 	if err != nil {
 		log.Fatalf("init err %v ", err)
 	}

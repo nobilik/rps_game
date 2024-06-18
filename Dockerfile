@@ -22,7 +22,7 @@ WORKDIR /app
 
 # Копируем бинарный файл и конфигурационный файл из builder
 COPY --from=builder /app/rps /app/rps
-COPY --from=builder /app/config/items.json /app/config/items.json
+COPY --from=builder /app/config/items.json /config/items.json
 
 # Устанавливаем команду для запуска контейнера
 CMD ["./rps"]
